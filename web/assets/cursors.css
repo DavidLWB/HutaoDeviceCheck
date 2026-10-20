@@ -1,0 +1,37 @@
+:root {
+  --cursor-default: url("cursors/default.png") 1 1, default;
+  --cursor-pointer: url("cursors/pointer.png") 1 2, pointer;
+  --cursor-text: url("cursors/text.png") 4 6, text;
+  --cursor-help: url("cursors/help.png") 1 1, help;
+  --cursor-busy: url("cursors/busy.png") 1 1, wait;
+  --cursor-progress: url("cursors/progress.png") 1 1, progress;
+  --cursor-crosshair: url("cursors/crosshair.png") 7 9, crosshair;
+  --cursor-not-allowed: url("cursors/not-allowed.png") 7 9, not-allowed;
+  --cursor-move: url("cursors/move.png") 6 6, move;
+  --cursor-ns-resize: url("cursors/ns-resize.png") 17 15, ns-resize;
+  --cursor-ew-resize: url("cursors/ew-resize.png") 17 16, ew-resize;
+  --cursor-nwse-resize: url("cursors/nwse-resize.png") 17 16, nwse-resize;
+  --cursor-nesw-resize: url("cursors/nesw-resize.png") 17 16, nesw-resize;
+}
+html, body { cursor: var(--cursor-default); }
+p, li, dt, dd, pre, code, .raw-code, .setting-label, .setting-value,
+.summary-hint, .hero-device-line, .assist-meta, .about-card p,
+.about-bullet-list li, .footer-inner { cursor: var(--cursor-text); }
+a, area, button, summary, label, select, [role="button"], [role="link"],
+.btn, .icon-btn, .nav-item, .mobile-tab, .mobile-command, .mobile-switch,
+.side-switch, .report-about-link, .choice, .theme-toggle,
+input[type="button"], input[type="submit"], input[type="reset"] { cursor: var(--cursor-pointer); }
+input:not([type="button"]):not([type="submit"]):not([type="reset"]),
+textarea, [contenteditable="true"] { cursor: var(--cursor-text); }
+button:disabled, select:disabled, input:disabled, textarea:disabled,
+[disabled], [aria-disabled="true"] { cursor: var(--cursor-not-allowed) !important; }
+.is-busy, [aria-busy="true"], .skeleton-shell { cursor: var(--cursor-progress); }
+.report-about-link { cursor: var(--cursor-help); }
+[data-cursor="help"] { cursor: var(--cursor-help) !important; }
+[data-cursor="crosshair"] { cursor: var(--cursor-crosshair) !important; }
+[data-cursor="move"] { cursor: var(--cursor-move) !important; }
+[data-cursor="ns-resize"] { cursor: var(--cursor-ns-resize) !important; }
+[data-cursor="ew-resize"] { cursor: var(--cursor-ew-resize) !important; }
+[data-cursor="nwse-resize"] { cursor: var(--cursor-nwse-resize) !important; }
+[data-cursor="nesw-resize"] { cursor: var(--cursor-nesw-resize) !important; }
+[data-cursor="wait"] { cursor: var(--cursor-busy) !important; }

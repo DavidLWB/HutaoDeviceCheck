@@ -1,0 +1,5 @@
+*.qoder.site
+dist/
+.qa/
+.DS_Store
+Thumbs.db

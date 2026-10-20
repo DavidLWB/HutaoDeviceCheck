@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>胡堂主的硬件簿 · 快捷查看你的设备信息</title>
+  <meta name="description" content="胡堂主的硬件簿 · 快捷查看你的设备信息。一款在本机运行的浏览器设备信息检测工具，可查看系统、屏幕、HDR、刷新率、GPU、浏览器内核等信息，并导入导出设备报告。">
+  <meta name="color-scheme" content="light dark">
+  <meta name="theme-color" id="theme-color-meta" content="#f3f2f1">
+  <link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png">
+  <link rel="icon" type="image/png" sizes="128x128" href="assets/favicon.png">
+  <link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
+  <link rel="stylesheet" href="assets/cursors.css">
+  <script src="assets/theme.js"></script>
+  <script>
+    (function () {
+      try {
+        var params = new URLSearchParams(location.search);
+        var forced = params.get('view');
+        var ua = navigator.userAgent || '';
+        var platform = navigator.platform || '';
+        var touchPoints = navigator.maxTouchPoints || 0;
+        var iPadOS = /iPad|iPhone|iPod/.test(ua) || (platform === 'MacIntel' && touchPoints > 1);
+        var android = /Android/i.test(ua);
+        var harmony = /HarmonyOS|OpenHarmony/i.test(ua);
+        var mobileHint = /Mobile|Windows Phone|IEMobile|BlackBerry|Opera Mini|Opera Mobi/i.test(ua);
+        var tabletHint = /iPad|Tablet|PlayBook|Kindle|Silk/i.test(ua);
+        var desktopOS = /Windows NT|Macintosh|X11|CrOS/i.test(ua);
+        var view;
+
+        if (forced === 'desktop' || forced === 'mobile') {
+          view = forced;
+        } else if (iPadOS || android || harmony || mobileHint || tabletHint) {
+          view = 'mobile';
+        } else if (desktopOS) {
+          view = 'desktop';
+        } else {
+          var touchFirst = touchPoints > 0 && window.matchMedia &&
+            window.matchMedia('(pointer: coarse)').matches &&
+            window.matchMedia('(hover: none)').matches;
+          view = touchFirst ? 'mobile' : 'desktop';
+        }
+
+        location.replace(view + '.html' + location.hash);
+      } catch (error) {
+        document.documentElement.classList.add('detect-failed');
+      }
+    })();
+  </script>
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #f3f2f1;
+      --surface: rgba(255, 255, 255, .74);
+      --stroke: rgba(0, 0, 0, .08);
+      --text: #1a1a1a;
+      --text-2: #616161;
+      --accent: #a82335;
+      --accent-soft: rgba(168, 35, 53, .1);
+      font-family: "Segoe UI Variable Text", "Segoe UI", "Microsoft YaHei UI", "PingFang SC", "Noto Sans SC", system-ui, sans-serif;
+    }
+    :root[data-theme="dark"] {
+      color-scheme: dark;
+      --bg: #202020;
+      --surface: rgba(255, 255, 255, .055);
+      --stroke: rgba(255, 255, 255, .09);
+      --text: #f4f4f4;
+      --text-2: #a9a9a9;
+      --accent: #ff9ba7;
+      --accent-soft: rgba(255, 134, 150, .14);
+    }
+    * { box-sizing: border-box; }
+    html, body { min-height: 100%; }
+    body {
+      margin: 0;
+      display: grid;
+      place-items: center;
+      min-height: 100vh;
+      min-height: 100dvh;
+      padding: 24px;
+      color: var(--text);
+      background: var(--bg);
+    }
+    .detect-shell {
+      width: min(440px, 100%);
+      padding: 30px;
+      border: 1px solid var(--stroke);
+      border-radius: 12px;
+      background: var(--surface);
+      box-shadow: 0 1px 2px rgba(0, 0, 0, .05), 0 24px 60px -36px rgba(0, 0, 0, .28);
+      backdrop-filter: blur(30px) saturate(1.35);
+    }
+    .brand { display: flex; align-items: center; gap: 12px; margin-bottom: 26px; }
+    .mark {
+      width: 42px;
+      height: 42px;
+      display: grid;
+      place-items: center;
+      flex: none;
+      border-radius: 50%;
+      overflow: hidden;
+      border: 1px solid var(--stroke);
+      background: transparent;
+    }
+    .mark img { width: 100%; height: 100%; display: block; object-fit: cover; }
+    .brand strong { display: block; font-size: 17px; font-weight: 650; letter-spacing: -.01em; }
+    .brand span { display: block; margin-top: 2px; font-size: 10px; letter-spacing: .035em; color: var(--text-2); }
+    h1 { margin: 0 0 10px; font-size: 25px; line-height: 1.25; font-weight: 650; letter-spacing: -.025em; }
+    p { margin: 0; color: var(--text-2); font-size: 13px; line-height: 1.7; }
+    .loading { display: flex; align-items: center; gap: 9px; margin: 22px 0; color: var(--accent); font-size: 13px; }
+    .spinner {
+      width: 15px;
+      height: 15px;
+      border: 2px solid var(--accent-soft);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin .8s linear infinite;
+    }
+    .choices { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 24px; }
+    .choice {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      padding: 15px;
+      color: var(--text);
+      text-decoration: none;
+      border: 1px solid var(--stroke);
+      border-radius: 8px;
+      background: rgba(255, 255, 255, .18);
+      transition: background .15s ease, border-color .15s ease, transform .15s ease;
+    }
+    .choice:hover { background: var(--accent-soft); border-color: var(--accent); }
+    .choice:active { transform: scale(.985); }
+    .choice svg { width: 21px; height: 21px; color: var(--accent); }
+    .choice strong { font-size: 13px; font-weight: 600; }
+    .choice small { color: var(--text-2); font-size: 11px; line-height: 1.45; }
+    .hint { margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--stroke); font-size: 11px; color: var(--text-2); line-height: 1.6; }
+    .hint a { color: var(--accent); text-underline-offset: 2px; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    @media (prefers-reduced-motion: reduce) {
+      .spinner { animation-duration: 1.8s; }
+      .choice { transition: none; }
+    }
+  </style>
+</head>
+<body>
+  <main class="detect-shell">
+    <div class="brand">
+      <div class="mark" aria-hidden="true">
+        <img src="assets/logo.png" alt="">
+      </div>
+      <div>
+        <strong>胡堂主的硬件簿</strong>
+        <span>快捷查看你的设备信息</span>
+      </div>
+    </div>
+    <h1>正在识别设备类型</h1>
+    <p>将根据操作系统、浏览器标识与触控特征，自动进入手机 / 平板或电脑端检测页面。</p>
+    <div class="loading"><span class="spinner" aria-hidden="true"></span>正在选择更合适的检测视图…</div>
+    <noscript>
+      <p>当前浏览器未启用 JavaScript，无法自动识别。请手动选择检测视图：</p>
+    </noscript>
+    <div class="choices">
+      <a class="choice" href="mobile.html">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-hidden="true"><rect x="7" y="2.5" width="10" height="19" rx="2.5"/><path d="M10.5 5.5h3"/></svg>
+        <strong>手机 / 平板检测</strong>
+        <small>Android · iOS · iPadOS<br>HarmonyOS · HarmonyOS NEXT</small>
+      </a>
+      <a class="choice" href="desktop.html">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-hidden="true"><rect x="2.5" y="4" width="19" height="13" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
+        <strong>电脑端检测</strong>
+        <small>Windows · macOS<br>Linux · ChromeOS</small>
+      </a>
+    </div>
+    <div class="hint">如自动识别有误，可在检测页顶部随时切换设备视图。<a href="about.html">关于胡堂主的硬件簿</a>。</div>
+  </main>
+</body>
+</html>
