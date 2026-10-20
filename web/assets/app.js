@@ -762,44 +762,75 @@
     }
   }
 
+  function permissionStatusText(status) {
+    if (status === 'denied') return '已拒绝';
+    if (status === 'granted') return '已授权但未取得信息';
+    if (status === 'unsupported') return '浏览器未提供状态';
+    return '未授权';
+  }
+
+  function mediaPermissionState(camera, microphone) {
+    var states = [camera, microphone].filter(function (value) {
+      return value && value !== 'unsupported';
+    });
+    if (!states.length) return 'unsupported';
+    if (states.indexOf('denied') !== -1) {
+      return states.every(function (value) { return value === 'denied'; }) ? 'denied' : 'partial';
+    }
+    if (states.indexOf('granted') !== -1) return 'granted';
+    return 'prompt';
+  }
+
+  function mediaPermissionStatusText(status) {
+    if (status === 'denied') return '已拒绝';
+    if (status === 'partial') return '部分被拒绝';
+    if (status === 'granted') return '已授权但未取得设备名称';
+    if (status === 'unsupported') return '浏览器未提供状态';
+    return '未授权';
+  }
+
   function getPermissionNeeds() {
-    var needs = { screen: false, media: false, screenDenied: false, mediaDenied: false };
+    var needs = { screen: false, media: false, screenDenied: false, mediaDenied: false, items: [] };
     if (!state.env || state.source !== 'local') return needs;
     var permissions = state.env.permissions || {};
     if (permissions.screenDetailsSupported && !state.env.screenDetails) {
+      var screenState = permissions['window-management'] || 'prompt';
       needs.screen = true;
-      needs.screenDenied = permissions['window-management'] === 'denied';
+      needs.screenDenied = screenState === 'denied';
+      needs.items.push({ label: '多屏详情', status: permissionStatusText(screenState) });
     }
     var devices = state.env.mediaDevices;
     var counts = devices && devices.counts ? devices.counts : {};
     var hasInput = (counts.videoinput || 0) + (counts.audioinput || 0) > 0;
     if (permissions.mediaCaptureSupported && !(devices && devices.labelled) && hasInput) {
+      var mediaState = mediaPermissionState(permissions.camera, permissions.microphone);
       needs.media = true;
-      needs.mediaDenied = permissions.camera === 'denied' || permissions.microphone === 'denied';
+      needs.mediaDenied = mediaState === 'denied' || mediaState === 'partial';
+      needs.items.push({ label: '摄像头 / 麦克风设备名称', status: mediaPermissionStatusText(mediaState) });
     }
     return needs;
   }
 
   function permissionCalloutMarkup() {
     var needs = getPermissionNeeds();
-    if (!needs.screen && !needs.media) return '';
-    var scopes = [];
-    if (needs.screen) scopes.push('多屏详情');
-    if (needs.media) scopes.push('媒体设备名称');
+    if (!needs.items.length) return '';
+    var missing = needs.items.map(function (item) {
+      return item.label + '（' + item.status + '）';
+    }).join('、');
     var busy = state.requestingAllPermissions || state.requestingScreen || state.requestingMedia;
     var denied = needs.screenDenied || needs.mediaDenied;
     var hasError = Boolean(state.env.screenDetailsError || state.env.mediaPermissionError);
     var title = '补全设备信息';
-    var description = '允许浏览器读取' + scopes.join('与') + '，以补全当前设备报告。';
+    var description = '仍需获取：' + missing + '。授权后可补全当前报告。';
     if (busy) {
       title = '正在请求浏览器权限';
-      description = '请在浏览器弹出的权限窗口中确认。';
+      description = '请在权限窗口中确认：' + missing + '。';
     } else if (denied) {
       title = '权限不足';
-      description = '可在浏览器站点设置中恢复权限后重试。';
+      description = '未获取：' + missing + '。可在浏览器站点设置中恢复权限后重试。';
     } else if (hasError) {
       title = '权限请求未完成';
-      description = '请完成浏览器授权，或点击按钮重试。';
+      description = '未获取：' + missing + '。点击按钮可再次请求。';
     }
     var button = '<button type="button" class="btn btn-primary" data-action="request-all-permissions"' + (busy ? ' disabled' : '') + '>' +
       (busy ? '<span class="spinner" aria-hidden="true"></span>等待授权…' : (denied || hasError ? '重试权限' : '请求权限')) +
@@ -906,14 +937,18 @@
     if (state.source !== 'local') return;
     state.report = state.localReport;
     renderContent({ animate: true });
+    var missing = [];
+    if (screenOutcome && !screenOutcome.ok) missing.push('多屏详情');
+    if (mediaOutcome && !mediaOutcome.ok) missing.push('摄像头 / 麦克风设备名称');
+    var missingText = missing.length ? ' 未获取：' + missing.join('、') + '。' : '';
     if (automatic) {
       if (failures.length) {
         var deniedFailure = failures.some(function (entry) { return entry.title === '权限不足'; });
-        showToast(deniedFailure ? '权限不足，部分增强信息未获取。' : '部分权限需要手动确认，可点击“请求权限”重试。', 'error');
+        showToast(deniedFailure ? '权限不足，未获取：' + missing.join('、') + '。' : '部分权限未完成，未获取：' + missing.join('、') + '。', 'error');
       }
     } else if (failures.length) {
       var dialogTitle = failures.some(function (entry) { return entry.title === '权限不足'; }) ? '权限不足' : '未能补全设备信息';
-      showDialog(dialogTitle, failures.map(function (entry) { return entry.message; }).join(' '));
+      showDialog(dialogTitle, failures.map(function (entry) { return entry.message; }).join(' ') + missingText);
     } else {
       showToast('屏幕与媒体信息已更新。');
     }
@@ -922,6 +957,26 @@
   document.addEventListener('click', function (event) {
     var target = event.target instanceof Element ? event.target : null;
     if (!target) return;
+
+    var displayContainer = target.closest('[data-display-tests]');
+    if (displayContainer) {
+      var displayTab = target.closest('[data-display-tab]');
+      if (displayTab) {
+        switchDisplayTest(displayContainer, displayTab.getAttribute('data-display-tab'));
+        return;
+      }
+      var displayControl = target.closest('[data-display-action]');
+      if (displayControl) {
+        var displayAction = displayControl.getAttribute('data-display-action');
+        if (displayAction === 'redetect') {
+          refreshDisplayTest(displayContainer);
+          showToast('已重新读取当前显示能力。');
+        } else if (displayAction === 'fullscreen') {
+          toggleDisplayTestFullscreen(displayContainer);
+        }
+        return;
+      }
+    }
 
     var sectionButton = target.closest('[data-section]');
     if (sectionButton) {
@@ -958,6 +1013,13 @@
     } else if (action === 'close-dialog') {
       closeDialog();
     }
+  });
+
+  document.addEventListener('change', function (event) {
+    var input = event.target instanceof Element ? event.target.closest('[data-display-video-input]') : null;
+    if (!input) return;
+    var container = input.closest('[data-display-tests]');
+    if (container) loadDisplayTestVideo(container, input);
   });
 
   function bindImportInput() {
@@ -1103,46 +1165,175 @@
       '</section>';
   }
 
-  function displayTestMarkup() {
-    var srgb = ['#ff0000', '#00ff00', '#0000ff', '#00ffff', '#ff00ff', '#ffff00'];
-    var p3 = [
-      ['#ff0000', 'color(display-p3 1 0 0)'],
-      ['#00ff00', 'color(display-p3 0 1 0)'],
-      ['#0000ff', 'color(display-p3 0 0 1)']
-    ];
-    var grays = ['#000000', '#1a1a1a', '#333333', '#4d4d4d', '#666666', '#808080', '#999999', '#b3b3b3', '#cccccc', '#e6e6e6', '#ffffff'];
-
-    function swatches(colors, sizeClass) {
-      return '<div class="gamut-swatches ' + sizeClass + '">' + colors.map(function (color) {
-        var style = Array.isArray(color)
-          ? 'background-color:' + color[0] + ';background-color:' + color[1]
-          : 'background-color:' + color;
-        return '<span style="' + style + '"></span>';
-      }).join('') + '</div>';
+  function displayTestMedia(query) {
+    try {
+      return typeof window.matchMedia === 'function' ? window.matchMedia(query).matches : null;
+    } catch (error) {
+      return null;
     }
+  }
 
-    return '<div class="display-tests" aria-labelledby="display-tests-title">' +
-      '<div class="block-heading"><h2 id="display-tests-title">显示器目视测试</h2><span>在当前屏幕上观察色彩与动态范围</span></div>' +
-      '<div class="display-test-grid">' +
-      '<figure class="display-test-card">' +
-      '<div class="display-test-canvas gamut-canvas" role="img" aria-label="色域观察图：包含 sRGB 纯色块、Display-P3 宽色域色块和灰阶色阶。">' +
-      '<div class="gamut-row"><span class="gamut-row-label">sRGB</span>' + swatches(srgb, 'is-six') + '</div>' +
-      '<div class="gamut-row"><span class="gamut-row-label">Display-P3</span>' + swatches(p3, 'is-three') + '</div>' +
-      '<div class="gamut-row"><span class="gamut-row-label">灰阶</span>' + swatches(grays, 'is-eleven') + '</div>' +
+  function readDisplayTestState() {
+    var rangeHigh = displayTestMedia('(dynamic-range: high)');
+    var videoRangeHigh = displayTestMedia('(video-dynamic-range: high)');
+    var hdrKnown = rangeHigh !== null || videoRangeHigh !== null;
+    var hdr = rangeHigh === true || videoRangeHigh === true;
+    var gamut = 'sRGB';
+    if (displayTestMedia('(color-gamut: rec2020)')) gamut = 'Rec.2020';
+    else if (displayTestMedia('(color-gamut: p3)')) gamut = 'Display-P3';
+    var screen = window.screen || {};
+    return {
+      hdr: hdr,
+      hdrLabel: hdr ? '已检测到 HDR' : hdrKnown ? '未检测到 HDR' : '浏览器未报告',
+      hdrShort: hdr ? '可用' : hdrKnown ? '不可用' : '未报告',
+      hdrCopy: hdr
+        ? '浏览器报告当前显示链路支持 HDR；实际亮度、黑位与高光表现仍取决于显示器硬件。'
+        : '浏览器未报告 HDR 能力；可检查系统 HDR 开关、显示器模式与连接线。',
+      gamut: gamut,
+      colorDepth: screen.colorDepth ? screen.colorDepth + ' 位' : '未公开',
+      resolution: screen.width && screen.height ? screen.width + ' × ' + screen.height : '未公开',
+      scale: (window.devicePixelRatio || 1) + '×'
+    };
+  }
+
+  function displayTestSwatches(colors, p3) {
+    return '<div class="gamut-swatches">' + colors.map(function (color) {
+      var style = p3
+        ? 'background-color:' + color.srgb + ';background-color:' + color.p3
+        : 'background-color:' + color.srgb;
+      return '<span style="' + style + '" title="' + escapeHtml(color.name) + '"></span>';
+    }).join('') + '</div>';
+  }
+
+  function displayTestMarkup() {
+    var view = readDisplayTestState();
+    var p3Colors = [
+      { name: '红', p3: 'color(display-p3 1 0 0)', srgb: '#ff0000' },
+      { name: '绿', p3: 'color(display-p3 0 1 0)', srgb: '#00ff00' },
+      { name: '蓝', p3: 'color(display-p3 0 0 1)', srgb: '#0000ff' },
+      { name: '橙', p3: 'color(display-p3 1 0.5 0)', srgb: '#ff8000' },
+      { name: '青', p3: 'color(display-p3 0 1 1)', srgb: '#00ffff' },
+      { name: '品红', p3: 'color(display-p3 1 0 1)', srgb: '#ff00ff' }
+    ];
+    var toneSteps = [];
+    for (var i = 0; i < 16; i += 1) {
+      var level = Math.round(i / 15 * 255);
+      toneSteps.push('<span style="background-color:rgb(' + level + ',' + level + ',' + level + ')" title="' + Math.round(i / 15 * 100) + '%"></span>');
+    }
+    return '<div class="display-tests" data-display-tests aria-labelledby="display-tests-title">' +
+      '<div class="display-tests-top">' +
+      '<div class="block-heading"><h2 id="display-tests-title">显示器目视测试</h2><span>当前屏幕 · 浏览器报告能力</span></div>' +
+      '<div class="display-test-toolbar">' +
+      '<div class="display-test-tabs" role="tablist" aria-label="显示器测试模式">' +
+      '<button type="button" class="is-active" id="display-tab-detect" role="tab" aria-selected="true" aria-controls="display-pane-detect" data-display-tab="detect">HDR 检测</button>' +
+      '<button type="button" id="display-tab-range" role="tab" aria-selected="false" aria-controls="display-pane-range" data-display-tab="range">动态范围</button>' +
+      '<button type="button" id="display-tab-gamut" role="tab" aria-selected="false" aria-controls="display-pane-gamut" data-display-tab="gamut">宽色域验证</button>' +
       '</div>' +
-      '<figcaption><strong>色域观察</strong><span>观察纯色块的饱和度与灰阶层次；支持宽色域的屏幕会让 P3 色块明显更鲜艳。</span></figcaption>' +
-      '</figure>' +
-      '<figure class="display-test-card">' +
-      '<div class="display-test-canvas hdr-canvas" role="img" aria-label="HDR 观察图：黑色背景上的白色 HDR 文字与高光色块。">' +
-      '<div class="hdr-word">HDR</div>' +
-      '<div class="hdr-sub">HIGH DYNAMIC RANGE</div>' +
-      '<div class="hdr-highlights"><span style="background:#ffffff"></span><span style="background:#ff0000"></span><span style="background:#00ff00"></span><span style="background:#0000ff"></span></div>' +
+      '<button type="button" class="display-test-tool" data-display-action="redetect">' + icon('refresh') + '重新检测</button>' +
+      '<button type="button" class="display-test-tool" data-display-action="fullscreen">' + icon('display') + '全屏</button>' +
       '</div>' +
-      '<figcaption><strong>HDR 高光</strong><span>在黑色背景上观察高亮文字与色块。支持 HDR 时应更明亮而不发灰；本图仅作目视参考。</span></figcaption>' +
-      '</figure>' +
       '</div>' +
-      '<p class="display-test-hint">颜色显示受浏览器色彩管理、系统 HDR 开关和显示器模式影响，测试图不能替代专业色度计或 HDR 认证。</p>' +
+      '<div class="display-test-stage">' +
+      '<div class="display-test-pane is-active" id="display-pane-detect" role="tabpanel" aria-labelledby="display-tab-detect" data-display-pane="detect">' +
+      '<div class="hdr-test">' +
+      '<div class="hdr-word" aria-hidden="true">HDR</div>' +
+      '<div class="hdr-test-status' + (view.hdr ? ' is-on' : '') + '" data-display-hdr-status>' + escapeHtml(view.hdrLabel) + '</div>' +
+      '<p class="hdr-test-copy" data-display-hdr-copy>' + escapeHtml(view.hdrCopy) + '</p>' +
+      '<label class="display-test-file">' + icon('file') + '载入本地 HDR 视频<input type="file" accept="video/mp4,video/webm,video/quicktime" data-display-video-input hidden></label>' +
+      '<video class="display-test-video" data-display-video controls playsinline hidden></video>' +
+      '</div>' +
+      '</div>' +
+      '<div class="display-test-pane" id="display-pane-range" role="tabpanel" aria-labelledby="display-tab-range" data-display-pane="range" hidden>' +
+      '<div class="range-test" role="img" aria-label="16 级灰阶亮度阶梯，从黑色到白色">' +
+      '<div class="range-steps">' + toneSteps.join('') + '</div>' +
+      '<div class="range-scale"><span>0 · 黑</span><span>16 级亮度阶梯</span><span>100 · 白</span></div>' +
+      '</div>' +
+      '</div>' +
+      '<div class="display-test-pane" id="display-pane-gamut" role="tabpanel" aria-labelledby="display-tab-gamut" data-display-pane="gamut" hidden>' +
+      '<div class="gamut-test" role="img" aria-label="sRGB 与 Display-P3 六种颜色对比">' +
+      '<div class="gamut-row"><span class="gamut-row-label">sRGB</span>' + displayTestSwatches(p3Colors, false) + '</div>' +
+      '<div class="gamut-row"><span class="gamut-row-label">Display-P3</span>' + displayTestSwatches(p3Colors, true) + '</div>' +
+      '<div class="gamut-names"><span>红</span><span>绿</span><span>蓝</span><span>橙</span><span>青</span><span>品红</span></div>' +
+      '</div>' +
+      '</div>' +
+      '</div>' +
+      '<div class="display-test-readout" aria-live="polite">' +
+      '<span>HDR <strong data-display-readout="hdr">' + escapeHtml(view.hdrShort) + '</strong></span>' +
+      '<span>色域 <strong data-display-readout="gamut">' + escapeHtml(view.gamut) + '</strong></span>' +
+      '<span>色深 <strong data-display-readout="depth">' + escapeHtml(view.colorDepth) + '</strong></span>' +
+      '<span>分辨率 <strong data-display-readout="resolution">' + escapeHtml(view.resolution) + '</strong></span>' +
+      '<span>缩放 <strong data-display-readout="scale">' + escapeHtml(view.scale) + '</strong></span>' +
+      '</div>' +
+      '<p class="display-test-hint">网页 CSS 无法把 SDR 白色变成真正的 HDR 高光；载入 HDR 视频并开启系统 HDR 时，浏览器才可能输出真实 HDR。亮度阶梯与色块仅用于目视参考，不能替代专业测量。</p>' +
       '</div>';
+  }
+
+  function switchDisplayTest(container, mode) {
+    container.querySelectorAll('[data-display-tab]').forEach(function (tab) {
+      var active = tab.getAttribute('data-display-tab') === mode;
+      tab.classList.toggle('is-active', active);
+      tab.setAttribute('aria-selected', active ? 'true' : 'false');
+    });
+    container.querySelectorAll('[data-display-pane]').forEach(function (pane) {
+      var active = pane.getAttribute('data-display-pane') === mode;
+      pane.classList.toggle('is-active', active);
+      pane.hidden = !active;
+    });
+    if (mode !== 'detect') {
+      var video = container.querySelector('[data-display-video]');
+      if (video) video.pause();
+    }
+  }
+
+  function refreshDisplayTest(container) {
+    var view = readDisplayTestState();
+    var readouts = {
+      hdr: view.hdrShort,
+      gamut: view.gamut,
+      depth: view.colorDepth,
+      resolution: view.resolution,
+      scale: view.scale
+    };
+    container.querySelectorAll('[data-display-readout]').forEach(function (node) {
+      var key = node.getAttribute('data-display-readout');
+      if (readouts[key]) node.textContent = readouts[key];
+    });
+    var status = container.querySelector('[data-display-hdr-status]');
+    if (status) {
+      status.textContent = view.hdrLabel;
+      status.classList.toggle('is-on', view.hdr);
+    }
+    var copy = container.querySelector('[data-display-hdr-copy]');
+    if (copy) copy.textContent = view.hdrCopy;
+  }
+
+  function toggleDisplayTestFullscreen(container) {
+    if (document.fullscreenElement) {
+      document.exitFullscreen().catch(function () {});
+      return;
+    }
+    if (!container.requestFullscreen) {
+      showToast('当前浏览器不支持全屏显示。', 'error');
+      return;
+    }
+    container.requestFullscreen().catch(function () {
+      showToast('无法进入全屏，请检查浏览器设置。', 'error');
+    });
+  }
+
+  function loadDisplayTestVideo(container, input) {
+    var file = input.files && input.files[0];
+    if (!file) return;
+    var video = container.querySelector('[data-display-video]');
+    if (!video) return;
+    var previous = video.getAttribute('data-object-url');
+    if (previous) URL.revokeObjectURL(previous);
+    var url = URL.createObjectURL(file);
+    video.setAttribute('data-object-url', url);
+    video.src = url;
+    video.hidden = false;
+    var playResult = video.play();
+    if (playResult && typeof playResult.catch === 'function') playResult.catch(function () {});
   }
 
   function renderGroup(groupData) {

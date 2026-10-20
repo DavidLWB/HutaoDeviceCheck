@@ -6,7 +6,7 @@
     name: '胡堂主的硬件簿',
     nameEn: 'Hutao Hardware Book',
     tagline: '快捷查看你的设备信息',
-    version: '1.4.1',
+    version: '1.5.0',
     schema: 'hutao-hardware-book.report',
     legacySchemas: Object.freeze(['hutao-detective.report', 'device-lens.report']),
     schemaVersion: 1
@@ -209,14 +209,36 @@
       };
     }
 
-    if (/Android/i.test(ua)) {
+    if (/Android/i.test(ua) || /Android/i.test((uaHints && uaHints.platform) || '')) {
       var androidMatch = ua.match(/Android\s+([\d.]+)/i);
-      var androidVersion = androidMatch ? androidMatch[1] : '';
+      var androidUaVersion = androidMatch ? androidMatch[1] : '';
+      var reducedUa = /Android 10;\s*K[);]/i.test(ua) || /Android 10;\s*K\b/i.test(ua);
+      var androidVersion = '';
+      var androidNote = '';
+
+      if (platformVersion) {
+        var androidParts = platformVersion.split('.').map(function (part) { return parseInt(part, 10); });
+        if (Number.isFinite(androidParts[0]) && androidParts[0] > 0) {
+          androidVersion = String(androidParts[0]);
+          if (Number.isFinite(androidParts[1]) && androidParts[1] > 0) {
+            androidVersion += '.' + androidParts[1];
+          }
+          androidNote = '版本来自 User-Agent Client Hints。';
+        }
+      }
+      if (!androidVersion && androidUaVersion && !reducedUa) {
+        androidVersion = androidUaVersion;
+        androidNote = '版本来自 User-Agent，浏览器可能对 UA 进行简化。';
+      }
+      if (!androidVersion && reducedUa) {
+        androidNote = '浏览器使用简化 UA（Android 10），未提供真实系统版本。';
+      }
+
       return {
         family: 'Android',
         version: androidVersion,
         display: 'Android' + (androidVersion ? ' ' + androidVersion : ''),
-        note: ''
+        note: androidNote
       };
     }
 

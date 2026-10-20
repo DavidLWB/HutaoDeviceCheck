@@ -1,7 +1,8 @@
 /* Hutao Hardware Book - local Live2D companion */
 .live2d-companion {
   position: fixed;
-  right: clamp(0px, 1.4vw, 20px);
+  left: clamp(0px, 1.4vw, 20px);
+  right: auto;
   bottom: 0;
   z-index: 24;
   width: clamp(208px, 23vw, 336px);
@@ -36,7 +37,8 @@
   .live2d-companion {
     width: clamp(168px, 32vw, 230px);
     height: clamp(220px, 38vh, 320px);
-    right: 0;
+    left: 0;
+    right: auto;
   }
 }
 
