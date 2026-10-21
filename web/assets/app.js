@@ -21,7 +21,7 @@
     { id: 'display', label: '屏幕显示', en: 'Display', icon: 'display', desc: '分辨率、色域、HDR、刷新率与目视测试。' },
     { id: 'graphics', label: '图形性能', en: 'Graphics', icon: 'graphics', desc: 'GPU 型号、渲染后端与 WebGL / WebGPU 能力。' },
     { id: 'browser', label: '浏览器内核', en: 'Browser & Engine', icon: 'browser', desc: '浏览器版本、渲染内核、语言与浏览器偏好。' },
-    { id: 'network', label: '网络与存储', en: 'Network & Storage', icon: 'network', desc: '连接状态、存储配额与页面运行环境。' },
+    { id: 'network', label: '网络与存储', en: 'Network & Storage', icon: 'network', desc: '连接状态、公网 IP 查询、存储配额与页面运行环境。' },
     { id: 'media', label: '媒体与输入', en: 'Media & Input', icon: 'media', desc: '摄像头、音频、媒体解码与传感器接口。' },
     { id: 'features', label: '特性支持', en: 'Capabilities', icon: 'features', desc: '当前浏览器与设备开放的 Web API。' },
     { id: 'raw', label: '原始数据', en: 'Raw Data', icon: 'code', desc: '完整报告的原始 JSON 数据，便于进一步排查。' }
@@ -958,6 +958,16 @@
     var target = event.target instanceof Element ? event.target : null;
     if (!target) return;
 
+    var networkLookup = target.closest('[data-network-lookup]');
+    if (networkLookup) {
+      var lookupButton = target.closest('[data-network-lookup-action]');
+      if (lookupButton) {
+        event.preventDefault();
+        lookupPublicIp(networkLookup, lookupButton);
+        return;
+      }
+    }
+
     var displayContainer = target.closest('[data-display-tests]');
     if (displayContainer) {
       var displayTab = target.closest('[data-display-tab]');
@@ -1178,7 +1188,9 @@
     } else {
       groupsHtml = '<div class="settings-card"><div class="card-empty">此分类暂无可用数据。</div></div>';
     }
-    var extra = definition.id === 'display' ? displayTestMarkup() : '';
+    var extra = '';
+    if (definition.id === 'display') extra = displayTestMarkup();
+    else if (definition.id === 'network') extra = networkIpMarkup();
     return '<section aria-labelledby="section-title">' +
       '<div class="section-head"><div class="section-title-wrap">' +
       '<div class="eyebrow"><span class="dot"></span>' + escapeHtml(definition.en) + '</div>' +
@@ -1360,6 +1372,101 @@
     video.hidden = false;
     var playResult = video.play();
     if (playResult && typeof playResult.catch === 'function') playResult.catch(function () {});
+  }
+
+  function networkIpMarkup() {
+    var imported = state.source === 'import';
+    return '<div class="network-ip" data-network-lookup aria-labelledby="network-ip-title">' +
+      '<div class="block-heading"><h2 id="network-ip-title">公网 IP 与归属地</h2><span>当前浏览器 · 第三方查询</span></div>' +
+      '<div class="settings-card network-ip-card">' +
+      '<div class="network-ip-head"><div><strong>公网出口信息</strong><span>点击查询会向第三方 IP 接口 ipwho.is 发送当前网络请求，不包含设备报告。</span></div>' +
+      '<button type="button" class="btn btn-small" data-network-lookup-action>' + icon('network') + '查询公网 IP</button></div>' +
+      '<div class="network-ip-result" data-network-result hidden></div>' +
+      '<p class="network-ip-note">' + (imported
+        ? '当前查看的是导入报告，此项查询属于当前浏览器，不代表报告中的设备。'
+        : '查询结果只用于当前浏览器会话，不写入报告。') +
+      ' IP 归属地为 IP 数据库的近似结果，不代表精确位置。</p>' +
+      '</div></div>';
+  }
+
+  function networkIpText(value) {
+    return value === null || value === undefined ? '' : String(value).trim();
+  }
+
+  function renderNetworkIpResult(container, data) {
+    var ip = networkIpText(data.ip);
+    var rows = [];
+    if (ip) rows.push(['公网 IP', ip]);
+    var location = [data.city, data.region, data.country].map(networkIpText).filter(Boolean).join(' · ');
+    if (location) rows.push(['IP 归属地', location]);
+    var connection = data.connection || {};
+    var isp = networkIpText(connection.isp || connection.org || data.isp || data.org);
+    if (isp) rows.push(['运营商 / 机构', isp]);
+    var asn = networkIpText(connection.asn || data.asn || data.as);
+    if (asn) {
+      if (!/^as/i.test(asn)) asn = 'AS' + asn;
+      rows.push(['ASN', asn]);
+    }
+    var type = networkIpText(data.type || (ip.indexOf(':') !== -1 ? 'IPv6' : ip ? 'IPv4' : ''));
+    if (type) rows.push(['地址类型', type]);
+    var timezone = data.timezone && data.timezone.id ? networkIpText(data.timezone.id) : networkIpText(data.timezone);
+    if (timezone) rows.push(['IP 时区', timezone]);
+    if (!rows.length) throw new Error('接口未返回可显示的字段。');
+    var result = container.querySelector('[data-network-result]');
+    if (!result) return;
+    result.innerHTML = '<dl class="network-ip-grid">' + rows.map(function (row) {
+      return '<div class="network-ip-item"><dt>' + escapeHtml(row[0]) + '</dt><dd>' + escapeHtml(row[1]) + '</dd></div>';
+    }).join('') + '</dl>' +
+      '<div class="network-ip-source">来源：<a href="https://ipwho.is" target="_blank" rel="noopener noreferrer">ipwho.is</a> · 查询于 ' + escapeHtml(E.formatDateTime(new Date())) + '</div>';
+  }
+
+  function lookupPublicIp(container, button) {
+    if (!container || !button) return;
+    var result = container.querySelector('[data-network-result]');
+    if (!result) return;
+    if (typeof window.fetch !== 'function') {
+      result.hidden = false;
+      result.innerHTML = '<div class="network-ip-error">' + icon('warning') + '<span>当前浏览器不支持网络查询。</span></div>';
+      return;
+    }
+    button.disabled = true;
+    button.innerHTML = '<span class="spinner" aria-hidden="true"></span>查询中…';
+    result.hidden = false;
+    result.innerHTML = '<div class="network-ip-loading">正在向第三方接口查询，请稍候…</div>';
+    var controller = typeof AbortController === 'function' ? new AbortController() : null;
+    var timer = window.setTimeout(function () {
+      if (controller) controller.abort();
+    }, 9000);
+    function finish() {
+      window.clearTimeout(timer);
+      button.disabled = false;
+    }
+    window.fetch('https://ipwho.is/', {
+      mode: 'cors',
+      cache: 'no-store',
+      credentials: 'omit',
+      referrerPolicy: 'no-referrer',
+      headers: { Accept: 'application/json' },
+      signal: controller ? controller.signal : undefined
+    }).then(function (response) {
+      if (!response.ok) throw new Error('接口返回 HTTP ' + response.status);
+      return response.json();
+    }).then(function (data) {
+      if (!data || data.success === false || !networkIpText(data.ip)) {
+        throw new Error(data && data.message ? String(data.message) : '接口未返回有效数据。');
+      }
+      renderNetworkIpResult(container, data);
+      button.innerHTML = icon('refresh') + '重新查询';
+      finish();
+    }).catch(function (error) {
+      var message = error && error.name === 'AbortError'
+        ? '查询超时，请稍后重试。'
+        : error && error.message ? error.message : '网络请求失败。';
+      result.innerHTML = '<div class="network-ip-error">' + icon('warning') + '<span>查询失败：' + escapeHtml(message) + '</span></div>';
+      button.innerHTML = icon('refresh') + '重试查询';
+      finish();
+      if (window.console && console.warn) console.warn('[IP lookup]', error);
+    });
   }
 
   function renderGroup(groupData) {

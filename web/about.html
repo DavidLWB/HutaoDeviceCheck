@@ -4,13 +4,15 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>关于胡堂主的硬件簿 · 快捷查看你的设备信息</title>
-  <meta name="description" content="胡堂主的硬件簿：版本信息、检测范围、权限说明与隐私声明。快捷查看你的设备信息。">
+  <meta name="description" content="胡堂主的硬件簿：版本信息、检测范围、隐私与权限说明。快捷查看你的设备信息。">
   <meta name="color-scheme" content="light dark">
   <meta name="theme-color" id="theme-color-meta" content="#f3f2f1">
   <link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png">
   <link rel="icon" type="image/png" sizes="128x128" href="assets/favicon.png">
   <link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
   <script src="assets/theme.js"></script>
+  <script src="assets/env.js" defer></script>
+  <script src="assets/about-permissions.js" defer></script>
   <link rel="stylesheet" href="assets/styles.css">
   <link rel="stylesheet" href="assets/cursors.css">
   <link rel="stylesheet" href="assets/live2d/companion.css">
@@ -53,7 +55,7 @@
           <h1 id="about-title">关于胡堂主的硬件簿</h1>
           <p>胡堂主的硬件簿是一个在浏览器内运行的设备信息检测与报告交换工具，快捷查看你的设备信息，也适合在远程协助前核对对方配置。</p>
           <div class="hero-chips">
-            <span class="hero-chip"><span>版本 1.5.1</span></span>
+            <span class="hero-chip"><span>版本 1.6.0</span></span>
             <span class="hero-chip"><span>报告格式 hutao-hardware-book.report v1</span></span>
             <span class="hero-chip"><span>静态托管 · 资源本地化</span></span>
           </div>
@@ -85,67 +87,45 @@
             <div><strong>显示与 HDR</strong><span>分辨率、色域、动态范围、色深、刷新率与目视测试</span></div>
             <div><strong>图形能力</strong><span>GPU 名称与厂商、渲染后端、WebGL / WebGPU 能力</span></div>
             <div><strong>浏览器内核</strong><span>浏览器版本、渲染内核、UA-CH、语言、时区与隐私偏好</span></div>
-            <div><strong>网络与存储</strong><span>联网状态、存储配额与页面安全上下文</span></div>
+            <div><strong>网络与存储</strong><span>联网状态、公网 IP / 归属地查询、存储配额与安全上下文</span></div>
             <div><strong>媒体与 API</strong><span>媒体设备、编解码能力、传感器接口与 Web API 支持情况</span></div>
           </div>
         </section>
 
-        <section class="about-card" aria-labelledby="about-companion">
-          <div class="eyebrow"><span class="dot"></span>LOOK &amp; FEEL</div>
-          <h2 id="about-companion">角色与指针</h2>
-          <p>本地加载的胡桃 Live2D 角色在电脑端停靠在侧边栏底部，在手机与平板上位于左下角。它会朝鼠标方向缓缓转动视线，并带有放慢的呼吸、眨眼与环顾动作。</p>
-          <ul class="about-bullet-list">
-            <li>Live2D 模型、纹理与渲染组件全部随站点本地加载，不连接远程模型服务。</li>
-            <li>桌面端的鼠标指针会按普通、链接、文本、忙碌、禁用等状态切换为胡桃主题光标。</li>
-            <li>触屏设备没有系统鼠标指针，光标样式通常不会显示，属于正常现象。</li>
-          </ul>
-        </section>
-
-        <section class="about-card" aria-labelledby="about-limits">
-          <div class="eyebrow"><span class="dot"></span>PERMISSIONS</div>
-          <h2 id="about-limits">权限与授权</h2>
-          <p>页面打开后会自动发起一次浏览器权限请求，以补充当前报告。若没有看到权限窗口，可以在概览页的“请求权限”按钮中手动重试。</p>
-          <ul class="about-bullet-list">
-            <li><strong>多屏详情：</strong>授权 Window Management 权限后，可读取显示器名称、分辨率、内置/外接状态与多屏布局。</li>
-            <li><strong>媒体设备名称：</strong>授权摄像头或麦克风后，可读取本地设备标签；临时媒体轨道会立即停止。</li>
-            <li>权限不足或拒绝授权时，页面会给出提示，仅影响对应的增强数据，不影响已读取的基础信息。</li>
-          </ul>
-        </section>
-
         <section class="about-card is-wide" aria-labelledby="about-privacy">
-          <div class="eyebrow"><span class="dot"></span>PRIVACY</div>
-          <h2 id="about-privacy">隐私声明</h2>
-          <div class="about-privacy-grid">
-            <div>
-              <h3>不收集、不上传</h3>
-              <p>胡堂主的硬件簿没有服务器端业务逻辑，不会将检测数据上传到服务器，也不接入统计、广告或第三方追踪脚本。所有检测逻辑、角色渲染和报告解析都在当前浏览器内完成。</p>
+          <div class="eyebrow"><span class="dot"></span>PRIVACY &amp; PERMISSIONS</div>
+          <h2 id="about-privacy">隐私与权限</h2>
+          <p>设备检测、报告解析与角色渲染都在当前浏览器内完成；除你主动查询公网 IP 外，不会向服务器上传检测数据，也不加载统计或广告脚本。</p>
+          <ul class="about-bullet-list">
+            <li>报告只有在你主动导出或复制后才会离开页面，分享前请检查型号、系统、屏幕与网络信息。</li>
+            <li>主题和权限请求标记仅保存在 sessionStorage；公网 IP 查询会向 ipwho.is 发送当前网络请求，结果不写入报告。</li>
+          </ul>
+          <div class="about-permission-head"><h3>需要申请的权限</h3><span>状态来自当前浏览器</span></div>
+          <div class="about-permissions">
+            <div class="about-permission-row" data-permission-row="screen">
+              <div class="about-permission-copy"><strong>多屏详情</strong><span>读取显示器名称、分辨率、内置/外接状态与多屏布局，不读取屏幕画面。</span></div>
+              <span class="permission-badge" data-permission-status="screen">检测中…</span>
+              <button type="button" class="btn btn-small" data-permission-request="screen" hidden>申请权限</button>
+              <p class="about-permission-message" data-permission-message="screen" role="status"></p>
             </div>
-            <div>
-              <h3>本地保存与分享</h3>
-              <p>页面不会自动保存检测结果。只有当你主动导出或复制报告时，数据才会生成并离开页面。导出文件由你自行保存和分享，接收方导入时同样只在浏览器内解析。</p>
-            </div>
-            <div>
-              <h3>权限与临时数据</h3>
-              <p>摄像头或麦克风授权只用于读取设备名称，页面不会录制或保存媒体内容；你可以在浏览器站点设置中随时撤销权限。主题选择和本次会话的权限请求标记仅保存在 sessionStorage。</p>
-            </div>
-            <div>
-              <h3>分享前请检查</h3>
-              <p>报告可能包含设备型号、操作系统版本、屏幕规格、GPU、浏览器标识等信息。将报告发给他人或公开分享前，请确认接收范围和内容符合你的预期。</p>
+            <div class="about-permission-row" data-permission-row="media">
+              <div class="about-permission-copy"><strong>摄像头 / 麦克风设备名称</strong><span>只读取设备标签，不录制、不保存媒体内容；临时媒体轨道会立即停止。</span></div>
+              <span class="permission-badge" data-permission-status="media">检测中…</span>
+              <button type="button" class="btn btn-small" data-permission-request="media" hidden>申请权限</button>
+              <p class="about-permission-message" data-permission-message="media" role="status"></p>
             </div>
           </div>
+          <p class="about-permission-hint">未授权的权限只影响对应增强数据，不影响基础检测；可随时在这里单独申请。</p>
         </section>
 
         <section class="about-card" aria-labelledby="about-version">
           <div class="eyebrow"><span class="dot"></span>VERSION</div>
-          <h2 id="about-version">版本与格式</h2>
+          <h2 id="about-version">版本信息</h2>
           <dl class="about-facts">
-            <div><dt>当前版本</dt><dd>1.5.1</dd></div>
+            <div><dt>当前版本</dt><dd>1.6.0</dd></div>
             <div><dt>报告格式</dt><dd>hutao-hardware-book.report v1</dd></div>
             <div><dt>最后更新</dt><dd>2026-10-21</dd></div>
-            <div><dt>页面组成</dt><dd>自动识别入口、手机 / 平板检测、电脑端检测、关于</dd></div>
-            <div><dt>运行方式</dt><dd>静态网页，无需后端服务</dd></div>
             <div><dt>内置组件</dt><dd>PixiJS · Live2D Cubism SDK · pixi-live2d-display</dd></div>
-            <div><dt>系统图标</dt><dd>Simple Icons · SVG Logos · Material Symbols</dd></div>
             <div><dt>制作</dt><dd>Produced by Davlike</dd></div>
             <div><dt>联系</dt><dd>QQ 536511760</dd></div>
           </dl>
@@ -164,7 +144,7 @@
       </div>
 
       <footer class="about-footer">
-        <span>胡堂主的硬件簿 v1.5.1 · 快捷查看你的设备信息</span>
+        <span>胡堂主的硬件簿 v1.6.0 · 快捷查看你的设备信息</span>
         <span class="about-footer-credit">Produced by Davlike · QQ 536511760</span>
         <div class="about-footer-links">
           <a href="index.html">设备检测</a>

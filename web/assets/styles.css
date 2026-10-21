@@ -919,14 +919,53 @@ button:focus-visible, a:focus-visible, input:focus-visible, [tabindex]:focus-vis
   font-size: 11px !important;
   line-height: 1.7;
 }
-.about-privacy-grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 18px 30px;
-  margin-top: 16px;
+.about-permission-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 18px;
+  padding-top: 14px;
+  border-top: 1px solid var(--stroke);
 }
-.about-privacy-grid > div { min-width: 0; }
-.about-privacy-grid p { margin-top: 0; color: var(--text-2); font-size: 12px; line-height: 1.75; }
+.about-permission-head h3 { margin: 0; font-size: 12.5px; font-weight: 600; }
+.about-permission-head span { color: var(--text-3); font-size: 10px; }
+.about-permissions { display: flex; flex-direction: column; gap: 8px; margin-top: 10px; }
+.about-permission-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px 10px;
+  padding: 11px 12px;
+  border: 1px solid var(--stroke);
+  border-radius: var(--radius);
+  background: var(--surface-subdued);
+}
+.about-permission-copy { flex: 1 1 280px; min-width: 0; }
+.about-permission-copy strong { display: block; font-size: 12px; }
+.about-permission-copy span { display: block; margin-top: 3px; color: var(--text-3); font-size: 10.5px; line-height: 1.55; }
+.permission-badge {
+  display: inline-flex;
+  align-items: center;
+  min-height: 22px;
+  padding: 0 8px;
+  border: 1px solid var(--stroke);
+  border-radius: 999px;
+  color: var(--text-2);
+  background: var(--control);
+  font-size: 10px;
+  white-space: nowrap;
+}
+.permission-badge.is-ok { color: var(--ok); border-color: var(--ok); background: var(--ok-bg); }
+.permission-badge.is-warn { color: var(--warn); border-color: var(--warn); background: var(--warn-bg); }
+.permission-badge.is-bad { color: var(--danger); border-color: var(--danger); background: var(--danger-bg); }
+.permission-badge.is-muted { color: var(--text-3); }
+.about-permission-row .btn { min-height: 30px; padding: 0 10px; font-size: 11px; }
+.about-permission-message { flex-basis: 100%; margin: 0; color: var(--text-3); font-size: 10px; line-height: 1.5; }
+.about-permission-message:empty { display: none; }
+.about-permission-message.is-error { color: var(--danger); }
+.about-permission-message.is-ok { color: var(--ok); }
+.about-permission-hint { margin-top: 10px; color: var(--text-3); font-size: 10px; line-height: 1.6; }
 .about-facts { margin-top: 12px; }
 .about-facts > div {
   display: flex;
@@ -968,7 +1007,6 @@ button:focus-visible, a:focus-visible, input:focus-visible, [tabindex]:focus-vis
   .about-card { padding: 17px; }
   .about-card.is-wide { grid-column: auto; }
   .about-scope-grid { gap: 6px; }
-  .about-privacy-grid { grid-template-columns: 1fr; gap: 14px; }
   .about-topbar .brand-sub { display: none; }
   .about-shell { padding-bottom: calc(22px + env(safe-area-inset-bottom, 0px)); }
 }
@@ -1315,6 +1353,24 @@ button:focus-visible, a:focus-visible, input:focus-visible, [tabindex]:focus-vis
 .display-tests:fullscreen .display-test-readout { color: #8f8f8f; }
 .display-tests:fullscreen .display-test-readout strong { color: #dddddd; }
 .display-tests:fullscreen .display-test-hint { color: #7f7f7f; }
+.network-ip { margin-top: 24px; }
+.network-ip .block-heading { margin: 0 2px 10px; }
+.network-ip-card { padding: 15px 16px; }
+.network-ip-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.network-ip-head strong { display: block; font-size: 12.5px; }
+.network-ip-head span { display: block; max-width: 660px; margin-top: 3px; color: var(--text-3); font-size: 10px; line-height: 1.55; }
+.network-ip-head .btn { flex: none; }
+.network-ip-result { margin-top: 13px; padding-top: 10px; border-top: 1px solid var(--stroke); }
+.network-ip-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 24px; margin: 0; }
+.network-ip-item { display: flex; justify-content: space-between; gap: 12px; padding: 8px 0; border-bottom: 1px solid var(--stroke); }
+.network-ip-item dt { flex: none; color: var(--text-3); font-size: 10.5px; }
+.network-ip-item dd { min-width: 0; margin: 0; color: var(--text); font-size: 11.5px; font-weight: 500; text-align: right; overflow-wrap: anywhere; }
+.network-ip-source { margin-top: 8px; color: var(--text-3); font-size: 9.5px; line-height: 1.5; }
+.network-ip-source a { color: var(--text-2); text-underline-offset: 2px; }
+.network-ip-note { margin-top: 9px; color: var(--text-3); font-size: 10px; line-height: 1.6; }
+.network-ip-loading { color: var(--text-3); font-size: 11px; }
+.network-ip-error { display: flex; align-items: flex-start; gap: 6px; color: var(--danger); font-size: 11px; line-height: 1.55; }
+.network-ip-error .icon { width: 13px; height: 13px; margin-top: 1px; flex: none; }
 @media (max-width: 720px) {
   .display-tests-top { flex-direction: column; align-items: flex-start; gap: 8px; }
   .display-test-toolbar { width: 100%; }
@@ -1332,6 +1388,9 @@ button:focus-visible, a:focus-visible, input:focus-visible, [tabindex]:focus-vis
   .gamut-swatches span { height: 42px; }
   .gamut-names { margin-left: 74px; font-size: 7.5px; }
   .display-test-readout { gap: 4px 12px; font-size: 9.5px; }
+  .network-ip-head { flex-direction: column; align-items: flex-start; }
+  .network-ip-head .btn { width: 100%; justify-content: center; }
+  .network-ip-grid { grid-template-columns: minmax(0, 1fr); }
 }
 
 /* ---------- Error state ---------- */
