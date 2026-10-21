@@ -983,6 +983,8 @@
           showToast('已重新读取当前显示能力。');
         } else if (displayAction === 'fullscreen') {
           toggleDisplayTestFullscreen(displayContainer);
+        } else if (displayAction === 'hdr-toggle') {
+          toggleHdrInspire(displayContainer);
         }
         return;
       }
@@ -1023,13 +1025,6 @@
     } else if (action === 'close-dialog') {
       closeDialog();
     }
-  });
-
-  document.addEventListener('change', function (event) {
-    var input = event.target instanceof Element ? event.target.closest('[data-display-video-input]') : null;
-    if (!input) return;
-    var container = input.closest('[data-display-tests]');
-    if (container) loadDisplayTestVideo(container, input);
   });
 
   function bindImportInput() {
@@ -1225,8 +1220,8 @@
       hdrLabel: hdr ? '已检测到 HDR' : hdrKnown ? '未检测到 HDR' : '浏览器未报告',
       hdrShort: hdr ? '可用' : hdrKnown ? '不可用' : '未报告',
       hdrCopy: hdr
-        ? '浏览器报告当前显示链路支持 HDR；实际亮度、黑位与高光表现仍取决于显示器硬件。'
-        : '浏览器未报告 HDR 能力；可检查系统 HDR 开关、显示器模式与连接线。',
+        ? '浏览器报告 HDR 可用。点击“激发测试”，观察白色面板中的图案是否出现高于 SDR 白的高光。'
+        : '浏览器未报告 HDR 能力；SDR 屏幕通常只能看到白色光晕，可检查系统 HDR 开关、显示器模式与连接线。',
       gamut: gamut,
       colorDepth: screen.colorDepth ? screen.colorDepth + ' 位' : '未公开',
       resolution: physical ? physical.width + ' × ' + physical.height : '未公开',
@@ -1273,12 +1268,18 @@
       '</div>' +
       '<div class="display-test-stage">' +
       '<div class="display-test-pane is-active" id="display-pane-detect" role="tabpanel" aria-labelledby="display-tab-detect" data-display-pane="detect">' +
-      '<div class="hdr-test">' +
-      '<div class="hdr-word" aria-hidden="true">HDR</div>' +
-      '<div class="hdr-test-status' + (view.hdr ? ' is-on' : '') + '" data-display-hdr-status>' + escapeHtml(view.hdrLabel) + '</div>' +
-      '<p class="hdr-test-copy" data-display-hdr-copy>' + escapeHtml(view.hdrCopy) + '</p>' +
-      '<label class="display-test-file">' + icon('file') + '载入本地 HDR 视频<input type="file" accept="video/mp4,video/webm,video/quicktime" data-display-video-input hidden></label>' +
-      '<video class="display-test-video" data-display-video controls playsinline hidden></video>' +
+      '<div class="hdr-inspire" data-hdr-stage>' +
+      '<div class="hdr-inspire-top">' +
+      '<span class="hdr-test-status' + (view.hdr ? ' is-on' : '') + '" data-display-hdr-status>' + escapeHtml(view.hdrLabel) + '</span>' +
+      '<div class="hdr-inspire-actions">' +
+      '<span class="hdr-inspire-state" data-display-hdr-state>等待测试指令…</span>' +
+      '<button type="button" class="btn btn-small btn-primary" data-display-action="hdr-toggle">激发测试</button>' +
+      '</div>' +
+      '</div>' +
+      '<div class="hdr-inspire-card" role="img" aria-label="HDR 激发测试图案">' +
+      '<span class="hdr-inspire-logo" aria-hidden="true"></span>' +
+      '</div>' +
+      '<p class="hdr-inspire-note" data-display-hdr-copy>' + escapeHtml(view.hdrCopy) + '</p>' +
       '</div>' +
       '</div>' +
       '<div class="display-test-pane" id="display-pane-range" role="tabpanel" aria-labelledby="display-tab-range" data-display-pane="range" hidden>' +
@@ -1302,7 +1303,7 @@
       '<span>分辨率（估算） <strong data-display-readout="resolution">' + escapeHtml(view.resolution) + '</strong></span>' +
       '<span>缩放 <strong data-display-readout="scale">' + escapeHtml(view.scale) + '</strong></span>' +
       '</div>' +
-      '<p class="display-test-hint">网页 CSS 无法把 SDR 白色变成真正的 HDR 高光；载入 HDR 视频并开启系统 HDR 时，浏览器才可能输出真实 HDR。亮度阶梯与色块仅用于目视参考，不能替代专业测量。</p>' +
+      '<p class="display-test-hint">HDR 图案使用本地 HDR AVIF 图像与 SVG 蒙版：支持 HDR 的屏幕会显示高于 SDR 白的高光，SDR 屏幕可能只看到白色光晕。亮度阶梯与色块用于目视参考，不能替代专业测量。</p>' +
       '</div>';
   }
 
@@ -1317,10 +1318,16 @@
       pane.classList.toggle('is-active', active);
       pane.hidden = !active;
     });
-    if (mode !== 'detect') {
-      var video = container.querySelector('[data-display-video]');
-      if (video) video.pause();
-    }
+  }
+
+  function toggleHdrInspire(container) {
+    var stage = container.querySelector('[data-hdr-stage]');
+    if (!stage) return;
+    var active = stage.classList.toggle('is-ignited');
+    var button = container.querySelector('[data-display-action="hdr-toggle"]');
+    if (button) button.textContent = active ? '停止测试' : '激发测试';
+    var state = container.querySelector('[data-display-hdr-state]');
+    if (state) state.textContent = active ? 'HDR 激发中…' : '等待测试指令…';
   }
 
   function refreshDisplayTest(container) {
@@ -1357,21 +1364,6 @@
     container.requestFullscreen().catch(function () {
       showToast('无法进入全屏，请检查浏览器设置。', 'error');
     });
-  }
-
-  function loadDisplayTestVideo(container, input) {
-    var file = input.files && input.files[0];
-    if (!file) return;
-    var video = container.querySelector('[data-display-video]');
-    if (!video) return;
-    var previous = video.getAttribute('data-object-url');
-    if (previous) URL.revokeObjectURL(previous);
-    var url = URL.createObjectURL(file);
-    video.setAttribute('data-object-url', url);
-    video.src = url;
-    video.hidden = false;
-    var playResult = video.play();
-    if (playResult && typeof playResult.catch === 'function') playResult.catch(function () {});
   }
 
   function networkIpMarkup() {

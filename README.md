@@ -16,7 +16,7 @@
 - 自动识别电脑、手机与平板，并提供手动切换入口
 - 浏览器内核、UA-CH、系统、架构、逻辑处理器与内存信息
 - 屏幕物理分辨率估算（逻辑分辨率 × DPR 后近似取整）、DPI、方向、色域、HDR、刷新率实测
-- HDR 能力检测、16 级亮度阶梯、Display-P3 宽色域对比，并支持载入本地 HDR 视频目视测试
+- HDR 能力检测与 AVIF + SVG 蒙版激发动画、16 级亮度阶梯、Display-P3 宽色域对比
 - GPU 型号、厂商、WebGL / WebGPU 能力
 - 网络状态、存储配额、媒体设备与编解码能力
 - 主动查询公网 IP、IP 归属地、运营商 / 机构与 ASN（第三方接口，结果不写入报告）
@@ -92,3 +92,5 @@ Produced by **Davlike** · QQ **536511760**
 - [pixi-live2d-display](https://github.com/guansss/pixi-live2d-display)
 
 系统图标来自 Simple Icons、SVG Logos 与 Material Symbols。胡桃角色及相关美术素材版权归原权利方所有。
+
+HDR 激发测试采用本地 HDR AVIF 图像与 SVG 蒙版方案，实现方式与测试图像参考 [Mintimate 在线工具箱的 displayHDR](https://tool.mintimate.cn/displayHDR)。

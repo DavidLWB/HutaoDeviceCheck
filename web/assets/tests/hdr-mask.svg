@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 160">
+  <rect x="18" y="22" width="204" height="116" rx="26" fill="none" stroke="#ffffff" stroke-width="4" opacity=".9"/>
+  <path d="M120 6v12M120 142v12M52 80H36M204 80h-16M71 39l8 8M169 121l8 8M169 39l-8 8M71 121l8-8" stroke="#ffffff" stroke-width="3" stroke-linecap="round" opacity=".65"/>
+  <text x="120" y="99" font-family="'Segoe UI', Arial, sans-serif" font-size="58" font-weight="800" letter-spacing="4" text-anchor="middle" fill="#ffffff">HDR</text>
+  <text x="120" y="119" font-family="'Segoe UI', Arial, sans-serif" font-size="7" font-weight="700" letter-spacing="3" text-anchor="middle" fill="#ffffff" opacity=".8">HIGH DYNAMIC RANGE</text>
+</svg>
