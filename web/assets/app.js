@@ -563,7 +563,7 @@
     line('类型', [summary.formFactorLabel, summary.pageLabel || E.viewLabel(meta.pageView)]);
     line('系统', [summary.os, summary.architecture]);
     line('处理器与内存', [summary.cpu, summary.memory]);
-    line('屏幕', [summary.screen, summary.refreshRate, summary.hdr]);
+    line('屏幕', [getEstimatedPhysicalScreen(summary) || summary.screen, summary.refreshRate, summary.hdr]);
     var gpuText = available(summary.gpu);
     line('GPU', [gpuText ? gpuText + (summary.gpuVendor ? '（' + summary.gpuVendor + '）' : '') : '']);
     line('浏览器', [summary.browser, summary.engine]);
@@ -1122,9 +1122,34 @@
     return icon('shield') + '读取设备名称';
   }
 
+  function getEstimatedPhysicalScreen(summary) {
+    if (!summary) return '';
+    if (summary.screenPhysical) return summary.screenPhysical;
+    var estimate = E.estimatePhysicalResolution(summary.width, summary.height, summary.dpr);
+    return estimate ? estimate.width + ' × ' + estimate.height : '';
+  }
+
   function renderStandardSection(report, definition) {
     var data = report.sections && report.sections[definition.id];
     var groups = data && Array.isArray(data.groups) ? data.groups : [];
+    if (definition.id === 'display') {
+      var estimatedPhysical = getEstimatedPhysicalScreen(report.summary);
+      if (estimatedPhysical) {
+        groups = groups.map(function (groupData) {
+          if (!groupData || !Array.isArray(groupData.items)) return groupData;
+          var items = groupData.items.map(function (itemData) {
+            if (itemData && itemData.label === '物理像素（估算）') {
+              return Object.assign({}, itemData, {
+                value: estimatedPhysical,
+                note: '由逻辑分辨率 × DPR 估算，半分像素按偶数像素取整；不一定等于面板原生分辨率。'
+              });
+            }
+            return itemData;
+          });
+          return Object.assign({}, groupData, { items: items });
+        });
+      }
+    }
     var actionButtons = [];
     if (state.source === 'local' && state.env) {
       var permissions = state.env.permissions || {};
@@ -1182,6 +1207,7 @@
     if (displayTestMedia('(color-gamut: rec2020)')) gamut = 'Rec.2020';
     else if (displayTestMedia('(color-gamut: p3)')) gamut = 'Display-P3';
     var screen = window.screen || {};
+    var physical = E.estimatePhysicalResolution(screen.width, screen.height, window.devicePixelRatio || 1);
     return {
       hdr: hdr,
       hdrLabel: hdr ? '已检测到 HDR' : hdrKnown ? '未检测到 HDR' : '浏览器未报告',
@@ -1191,7 +1217,7 @@
         : '浏览器未报告 HDR 能力；可检查系统 HDR 开关、显示器模式与连接线。',
       gamut: gamut,
       colorDepth: screen.colorDepth ? screen.colorDepth + ' 位' : '未公开',
-      resolution: screen.width && screen.height ? screen.width + ' × ' + screen.height : '未公开',
+      resolution: physical ? physical.width + ' × ' + physical.height : '未公开',
       scale: (window.devicePixelRatio || 1) + '×'
     };
   }
@@ -1261,7 +1287,7 @@
       '<span>HDR <strong data-display-readout="hdr">' + escapeHtml(view.hdrShort) + '</strong></span>' +
       '<span>色域 <strong data-display-readout="gamut">' + escapeHtml(view.gamut) + '</strong></span>' +
       '<span>色深 <strong data-display-readout="depth">' + escapeHtml(view.colorDepth) + '</strong></span>' +
-      '<span>分辨率 <strong data-display-readout="resolution">' + escapeHtml(view.resolution) + '</strong></span>' +
+      '<span>分辨率（估算） <strong data-display-readout="resolution">' + escapeHtml(view.resolution) + '</strong></span>' +
       '<span>缩放 <strong data-display-readout="scale">' + escapeHtml(view.scale) + '</strong></span>' +
       '</div>' +
       '<p class="display-test-hint">网页 CSS 无法把 SDR 白色变成真正的 HDR 高光；载入 HDR 视频并开启系统 HDR 时，浏览器才可能输出真实 HDR。亮度阶梯与色块仅用于目视参考，不能替代专业测量。</p>' +
@@ -1485,7 +1511,14 @@
     var formFactor = summary.formFactorLabel || (meta.formFactorLabel || '');
     var pageLabel = summary.pageLabel || E.viewLabel(meta.pageView);
     var browserName = summary.browser || summary.browserName || '';
-    var screen = summary.screen || '浏览器未公开';
+    var logicalScreen = summary.screen || '浏览器未公开';
+    var physicalScreen = getEstimatedPhysicalScreen(summary);
+    var screen = physicalScreen || logicalScreen;
+    var screenHintParts = [];
+    if (physicalScreen) screenHintParts.push('物理估算');
+    if (summary.dpr) screenHintParts.push('DPR ' + summary.dpr + '×');
+    if (physicalScreen && physicalScreen !== logicalScreen) screenHintParts.push('逻辑 ' + logicalScreen);
+    var screenHint = screenHintParts.join(' · ') || pageLabel;
     var refresh = summary.refreshRate || '未测出';
     var hdr = summary.hdr || 'HDR 未知';
     var gamut = summary.colorGamut || '未知色域';
@@ -1513,7 +1546,7 @@
         icon: 'display',
         label: '屏幕分辨率',
         value: screen,
-        hint: summary.dpr ? 'DPR ' + summary.dpr + '×' : pageLabel
+        hint: screenHint
       },
       {
         icon: 'activity',
@@ -1555,7 +1588,7 @@
       : '页面在打开时完成一次检测；屏幕与媒体设备详情会在浏览器允许时自动补充。';
     var heroChips = [];
     if (!isUnavailableValue(screen)) {
-      heroChips.push('<span class="hero-chip">' + icon('display') + '<span>' + escapeHtml(screen + ' · DPR ' + (summary.dpr || '—')) + '</span></span>');
+      heroChips.push('<span class="hero-chip"' + (physicalScreen ? ' title="物理像素估算"' : '') + '>' + icon('display') + '<span>' + escapeHtml(screen + ' · DPR ' + (summary.dpr || '—')) + '</span></span>');
     }
     var refreshLine = [refresh, hdr].filter(function (value) { return value && !isUnavailableValue(value) && value !== 'HDR 未知'; }).join(' · ');
     if (refreshLine) {

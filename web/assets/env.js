@@ -6,7 +6,7 @@
     name: '胡堂主的硬件簿',
     nameEn: 'Hutao Hardware Book',
     tagline: '快捷查看你的设备信息',
-    version: '1.5.0',
+    version: '1.5.1',
     schema: 'hutao-hardware-book.report',
     legacySchemas: Object.freeze(['hutao-detective.report', 'device-lens.report']),
     schemaVersion: 1
@@ -97,6 +97,29 @@
     var hours = Math.floor(minutes / 60);
     var rest = minutes % 60;
     return hours + ' 小时' + (rest ? ' ' + rest + ' 分钟' : '');
+  }
+
+  function approximatePhysicalPixels(value) {
+    if (!Number.isFinite(value) || value <= 0) return null;
+    var lower = Math.floor(value);
+    var upper = Math.ceil(value);
+    if (lower === upper) return lower;
+    var lowerDistance = value - lower;
+    var upperDistance = upper - value;
+    if (lowerDistance < upperDistance - 1e-9) return lower;
+    if (upperDistance < lowerDistance - 1e-9) return upper;
+    // CSS 屏幕尺寸取整后再乘 DPR 会产生半分像素误差；恰好对半时优先偶数面板。
+    return lower % 2 === 0 ? lower : upper;
+  }
+
+  function estimatePhysicalResolution(width, height, dpr) {
+    var w = Number(width);
+    var h = Number(height);
+    var ratio = Number(dpr);
+    if (!Number.isFinite(w) || !Number.isFinite(h) || !Number.isFinite(ratio) || w <= 0 || h <= 0 || ratio <= 0) return null;
+    var physicalWidth = approximatePhysicalPixels(w * ratio);
+    var physicalHeight = approximatePhysicalPixels(h * ratio);
+    return physicalWidth && physicalHeight ? { width: physicalWidth, height: physicalHeight } : null;
   }
 
   function readMediaQuery(query) {
@@ -1247,6 +1270,7 @@
     formatDateTime: formatDateTime,
     formatRefresh: formatRefresh,
     formatDuration: formatDuration,
+    estimatePhysicalResolution: estimatePhysicalResolution,
     shortGpuName: shortGpuName,
     formFactorLabel: formFactorLabel,
     viewLabel: viewLabel,

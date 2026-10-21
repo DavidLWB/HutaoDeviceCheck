@@ -175,6 +175,7 @@
     var gpu = getGpuText(env);
     var width = env.screen.width;
     var height = env.screen.height;
+    var physicalScreen = E.estimatePhysicalResolution(width, height, env.screen.dpr);
     var cores = env.hardware.cores;
     var routeMatches = env.expectedView === env.view;
     return {
@@ -194,6 +195,7 @@
       engine: env.browser.engine,
       engineVersion: env.browser.engineVersion,
       screen: width && height ? width + ' × ' + height : '浏览器未公开',
+      screenPhysical: physicalScreen ? physicalScreen.width + ' × ' + physicalScreen.height : '',
       width: width,
       height: height,
       dpr: env.screen.dpr,
@@ -296,8 +298,9 @@
     var screenList = screenDetails && Array.isArray(screenDetails.screens) ? screenDetails.screens : [];
     var refresh = getRefreshState(env);
     var resolution = screen.width && screen.height ? screen.width + ' × ' + screen.height : '浏览器未公开';
-    var physical = screen.width && screen.height
-      ? Math.round(screen.width * screen.dpr) + ' × ' + Math.round(screen.height * screen.dpr)
+    var physicalEstimate = E.estimatePhysicalResolution(screen.width, screen.height, screen.dpr);
+    var physical = physicalEstimate
+      ? physicalEstimate.width + ' × ' + physicalEstimate.height
       : '浏览器未公开';
     var dynamicRange = display.dynamicRangeHigh === null ? '浏览器未公开' : display.dynamicRangeHigh ? 'HDR（high）' : '标准（standard）';
     var videoDynamicRange = display.videoDynamicRangeHigh === null ? '浏览器未公开' : display.videoDynamicRangeHigh ? 'HDR（high）' : '标准（standard）';
@@ -325,7 +328,7 @@
             : 'CSS 像素，浏览器布局使用的屏幕尺寸。'
         }),
         item('物理像素（估算）', physical, {
-          note: '由逻辑分辨率 × DPR 估算，不一定等于面板原生分辨率。'
+          note: '由逻辑分辨率 × DPR 估算，半分像素按偶数像素取整；不一定等于面板原生分辨率。'
         }),
         item('可用屏幕区域', screen.availWidth && screen.availHeight ? screen.availWidth + ' × ' + screen.availHeight : '浏览器未公开', {
           note: '扣除系统任务栏或状态栏后的可用 CSS 像素。'
