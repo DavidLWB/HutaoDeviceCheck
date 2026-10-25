@@ -58,6 +58,12 @@ npx serve web
 
 `dist/` 是用于其他预览环境的本地构建副本，不属于 GitHub Pages 的发布源。修改站点时请以 `web/` 为准。
 
+## 资源与性能
+
+- Live2D 的 PixiJS / Cubism 脚本由 `companion.js` 在页面加载完成且确有展示位置后按需加载，页面无需手动引入 vendor 脚本。
+- Live2D 纹理优先使用 `texture_00.webp` 与 `hutao.model3.webp.json`，不支持 WebP 的浏览器会自动回退到 PNG 模型。
+- 品牌 Logo 通过 `<picture>` 优先加载 WebP，并保留 PNG 回退。
+
 ## 更新与部署
 
 1. 修改 `web/` 下的文件。

@@ -6,7 +6,7 @@
     name: '胡堂主的硬件簿',
     nameEn: 'Hutao Hardware Book',
     tagline: '快捷查看你的设备信息',
-    version: '1.7.4',
+    version: '1.7.5',
     schema: 'hutao-hardware-book.report',
     legacySchemas: Object.freeze(['hutao-detective.report', 'device-lens.report']),
     schemaVersion: 1
@@ -129,13 +129,6 @@
     } catch (error) {
       return null;
     }
-  }
-
-  function containsAny(text, patterns) {
-    for (var i = 0; i < patterns.length; i += 1) {
-      if (patterns[i].test(text)) return true;
-    }
-    return false;
   }
 
   function getUaHintsBrands(list) {
@@ -502,7 +495,7 @@
       var frameTimes = [];
       var start = 0;
       var finished = false;
-      var timeout = setTimeout(function () { finish('interrupted'); }, (duration || 1100) + 700);
+      var timeout = setTimeout(function () { finish('interrupted'); }, (duration || 700) + 700);
 
       function finish(reason) {
         if (finished) return;
@@ -540,7 +533,7 @@
         if (finished) return;
         if (!start) start = now;
         frameTimes.push(now);
-        if (now - start >= (duration || 1100)) {
+        if (now - start >= (duration || 700)) {
           finish('measured');
         } else {
           window.requestAnimationFrame(tick);

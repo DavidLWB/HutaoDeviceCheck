@@ -5,7 +5,13 @@
   if (window.__hutaoLive2DLoaded) return;
   window.__hutaoLive2DLoaded = true;
 
-  var MODEL_URL = 'assets/live2d/hutao/hutao.model3.json';
+  var MODEL_URL_PNG = 'assets/live2d/hutao/hutao.model3.json';
+  var MODEL_URL_WEBP = 'assets/live2d/hutao/hutao.model3.webp.json';
+  var VENDOR_URLS = [
+    'assets/live2d/vendor/pixi.min.js',
+    'assets/live2d/vendor/live2dcubismcore.min.js',
+    'assets/live2d/vendor/cubism4.min.js'
+  ];
   var container = null;
   var app = null;
   var model = null;
@@ -15,6 +21,8 @@
   var pointer = { x: 0, y: 0, active: false };
   var hasMouse = false;
   var isCompact = false;
+  var viewRect = { left: 0, top: 0, width: 0, height: 0 };
+  var resizeQueued = false;
 
   try {
     reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -25,6 +33,30 @@
 
   function isSupported() {
     return Boolean(window.PIXI && window.PIXI.live2d && window.PIXI.live2d.Live2DModel && window.PIXI.Application);
+  }
+
+  function supportsWebp() {
+    try {
+      return document.createElement('canvas').toDataURL('image/webp').indexOf('data:image/webp') === 0;
+    } catch (error) {
+      return false;
+    }
+  }
+
+  function loadScript(src) {
+    return new Promise(function (resolve, reject) {
+      var script = document.createElement('script');
+      script.src = src;
+      script.onload = function () { resolve(); };
+      script.onerror = function () { reject(new Error('脚本加载失败：' + src)); };
+      document.head.appendChild(script);
+    });
+  }
+
+  function loadVendors() {
+    return VENDOR_URLS.reduce(function (chain, src) {
+      return chain.then(function () { return loadScript(src); });
+    }, Promise.resolve());
   }
 
   function removeCompanion() {
@@ -42,6 +74,8 @@
     if (!width || !height) return;
 
     app.renderer.resize(width, height);
+    var rect = app.view.getBoundingClientRect();
+    viewRect = { left: rect.left, top: rect.top, width: rect.width, height: rect.height };
     model.scale.set(1);
     var baseWidth = model.width || 1;
     var baseHeight = model.height || 1;
@@ -55,16 +89,14 @@
 
   function focusPointer(clientX, clientY) {
     if (!ready || !model || !app) return;
-    var rect = app.view.getBoundingClientRect();
-    model.focus(clientX - rect.left, clientY - rect.top);
+    model.focus(clientX - viewRect.left, clientY - viewRect.top);
   }
 
   function idleFocus(now) {
     if (!ready || !model || !app) return;
-    var rect = app.view.getBoundingClientRect();
     var t = now / 1000;
-    var x = rect.left + rect.width * (0.5 + Math.sin(t * 0.16) * 0.9);
-    var y = rect.top + rect.height * (0.34 + Math.sin(t * 0.1 + 1.3) * 0.32);
+    var x = viewRect.left + viewRect.width * (0.5 + Math.sin(t * 0.16) * 0.9);
+    var y = viewRect.top + viewRect.height * (0.34 + Math.sin(t * 0.1 + 1.3) * 0.32);
     focusPointer(x, y);
   }
 
@@ -90,9 +122,16 @@
   }
 
   function onResize() {
-    isCompact = !docked && window.innerWidth <= 560;
-    if (app) app.ticker.maxFPS = isCompact ? 30 : 60;
-    fitModel();
+    if (resizeQueued) return;
+    resizeQueued = true;
+    var update = function () {
+      resizeQueued = false;
+      isCompact = !docked && window.innerWidth <= 560;
+      if (app) app.ticker.maxFPS = isCompact ? 30 : 60;
+      fitModel();
+    };
+    if (window.requestAnimationFrame) window.requestAnimationFrame(update);
+    else window.setTimeout(update, 100);
   }
 
   function onVisibilityChange() {
@@ -117,11 +156,9 @@
       : null;
   }
 
-  function init() {
-    if (!isSupported()) return;
-    var placement = resolveHost();
-    if (!placement) return;
+  function start(placement) {
     docked = placement.docked;
+    var modelUrl = supportsWebp() ? MODEL_URL_WEBP : MODEL_URL_PNG;
 
     try {
       container = document.createElement('div');
@@ -145,7 +182,7 @@
 
       window.PIXI.live2d.Live2DModel.registerTicker(window.PIXI.Ticker);
 
-      window.PIXI.live2d.Live2DModel.from(MODEL_URL, {
+      window.PIXI.live2d.Live2DModel.from(modelUrl, {
         autoInteract: false,
         autoUpdate: !reduceMotion
       }).then(function (loaded) {
@@ -174,6 +211,23 @@
       if (window.console && console.warn) console.warn('[Live2D] 无法启动：', error);
       removeCompanion();
     }
+  }
+
+  function init() {
+    var placement = resolveHost();
+    if (!placement) return;
+    if (isSupported()) {
+      start(placement);
+      return;
+    }
+    loadVendors().then(function () {
+      var current = resolveHost();
+      if (!current) return;
+      if (!isSupported()) throw new Error('Live2D 组件未能初始化。');
+      start(current);
+    }).catch(function (error) {
+      if (window.console && console.warn) console.warn('[Live2D] 资源未能加载：', error);
+    });
   }
 
   function scheduleInit() {

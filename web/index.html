@@ -7,9 +7,9 @@
   <meta name="description" content="胡堂主的硬件簿 · 快捷查看你的设备信息。一款在本机运行的浏览器设备信息检测工具，可查看系统、屏幕、HDR、刷新率、GPU、浏览器内核等信息，并导入导出设备报告。">
   <meta name="color-scheme" content="light dark">
   <meta name="theme-color" id="theme-color-meta" content="#f3f2f1">
-  <link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png?v=1.7.4">
-  <link rel="icon" type="image/png" sizes="128x128" href="assets/favicon.png?v=1.7.4">
-  <link rel="apple-touch-icon" href="assets/apple-touch-icon.png?v=1.7.4">
+  <link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png?v=1.7.5">
+  <link rel="icon" type="image/png" sizes="128x128" href="assets/favicon.png?v=1.7.5">
+  <link rel="apple-touch-icon" href="assets/apple-touch-icon.png?v=1.7.5">
   <link rel="stylesheet" href="assets/cursors.css">
   <script src="assets/theme.js"></script>
   <script>
@@ -102,6 +102,7 @@
       border: 1px solid var(--stroke);
       background: transparent;
     }
+    .mark picture { display: block; width: 100%; height: 100%; }
     .mark img { width: 100%; height: 100%; display: block; object-fit: cover; }
     .brand strong { display: block; font-size: 17px; font-weight: 650; letter-spacing: -.01em; }
     .brand span { display: block; margin-top: 2px; font-size: 10px; letter-spacing: .035em; color: var(--text-2); }
@@ -147,7 +148,7 @@
   <main class="detect-shell">
     <div class="brand">
       <div class="mark" aria-hidden="true">
-        <img src="assets/logo.png?v=1.7.4" alt="">
+        <picture><source srcset="assets/logo.webp?v=1.7.5" type="image/webp"><img src="assets/logo.png?v=1.7.5" alt=""></picture>
       </div>
       <div>
         <strong>胡堂主的硬件簿</strong>

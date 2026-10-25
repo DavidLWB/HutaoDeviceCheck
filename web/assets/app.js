@@ -64,7 +64,11 @@
   }
 
   function brandMark() {
-    return '<span class="brand-mark" aria-hidden="true"><img src="assets/logo.png?v=' + encodeURIComponent(E.APP.version) + '" alt=""></span>';
+    var version = '?v=' + encodeURIComponent(E.APP.version);
+    return '<span class="brand-mark" aria-hidden="true"><picture>' +
+      '<source srcset="assets/logo.webp' + version + '" type="image/webp">' +
+      '<img src="assets/logo.png' + version + '" alt="">' +
+      '</picture></span>';
   }
 
   function escapeHtml(value) {
@@ -242,7 +246,7 @@
       '<div class="skeleton-hero"><div class="skeleton-hero-inner">' +
       '<div class="skeleton-line w-30"></div><div class="skeleton-line w-70"></div>' +
       '<div class="skeleton-line w-50"></div><div class="skeleton-line w-90"></div>' +
-      '<div class="skeleton-note"><span class="spinner" aria-hidden="true"></span>正在读取设备信息并采样刷新率，约需 1 秒…</div>' +
+      '<div class="skeleton-note"><span class="spinner" aria-hidden="true"></span>正在读取设备信息并采样刷新率，约需半秒…</div>' +
       '</div></div>' +
       '<div class="skeleton-grid"><div class="skeleton-card"></div><div class="skeleton-card"></div><div class="skeleton-card"></div></div>' +
       '<div class="skeleton-group-grid"><div class="skeleton-group"></div><div class="skeleton-group"></div></div>' +
