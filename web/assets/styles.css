@@ -615,6 +615,8 @@ button:focus-visible, a:focus-visible, input:focus-visible, [tabindex]:focus-vis
 }
 .hero-chip .icon { width: 13px; height: 13px; color: var(--accent); }
 .hero-chip span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.hero-chip-link { text-decoration: none; }
+.hero-chip-link:hover { border-color: var(--accent-border); background: var(--accent-soft); color: var(--accent); }
 .hero-art { position: relative; z-index: 1; min-width: 0; display: flex; justify-content: center; align-items: center; }
 .hero-os-art { min-height: 222px; }
 .os-emblem {
