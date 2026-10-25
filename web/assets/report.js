@@ -273,8 +273,11 @@
           note: battery ? '电池数据由当前浏览器、系统电源策略共同决定，数值可能为估算值或短暂过期。' : ''
         }),
         group('输入与交互', [
-          item('触控能力', touch > 0 ? '支持 · 最多 ' + touch + ' 点' : '不支持', {
-            tone: touch > 0 ? 'ok' : 'muted'
+          item('触控能力', touch > 0 ? '支持 · 报告 ' + touch + ' 点' : '浏览器未报告', {
+            tone: touch > 0 ? 'ok' : 'muted',
+            note: touch > 0
+              ? '来源 navigator.maxTouchPoints；该值由浏览器 / 系统提供，可能低于屏幕硬件实际支持的点数。'
+              : '来源 navigator.maxTouchPoints；为 0 不代表一定没有触控屏，可能是浏览器未报告或被限制。'
           }),
           item('主指针类型', pointerLabel(env.display.pointer)),
           item('悬停能力', hoverLabel(env.display.hover)),
