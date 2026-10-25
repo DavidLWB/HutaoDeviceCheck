@@ -6,7 +6,7 @@
     name: '胡堂主的硬件簿',
     nameEn: 'Hutao Hardware Book',
     tagline: '快捷查看你的设备信息',
-    version: '1.7.0',
+    version: '1.7.1',
     schema: 'hutao-hardware-book.report',
     legacySchemas: Object.freeze(['hutao-detective.report', 'device-lens.report']),
     schemaVersion: 1

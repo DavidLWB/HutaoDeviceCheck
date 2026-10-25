@@ -64,7 +64,7 @@
   }
 
   function brandMark() {
-    return '<span class="brand-mark" aria-hidden="true"><img src="assets/logo.png" alt=""></span>';
+    return '<span class="brand-mark" aria-hidden="true"><img src="assets/logo.png?v=' + encodeURIComponent(E.APP.version) + '" alt=""></span>';
   }
 
   function escapeHtml(value) {
